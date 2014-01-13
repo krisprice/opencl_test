@@ -19,9 +19,9 @@ __kernel void sum_numbers(
 	int global_size = get_global_size(0);
 	int i;
 	int sum = 0;
-
+	
 	for (i = 0; i < global_size; i++)
-		sum += numbers[(global_id*global_size)+i];
+		sum += numbers[(i*global_size)+global_id];
 	
 	local_sums[local_id] = sum;
 
@@ -35,7 +35,7 @@ __kernel void sum_numbers(
 		group_sums[get_group_id(0)] = sum;
 	}
 }
-
+ 
 __kernel void matrix_multiply(
 	uint n,
 	__global float *aa,

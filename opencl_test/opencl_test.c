@@ -86,7 +86,7 @@ void run_sum_numbers(cl_context context, cl_command_queue queue, cl_program prog
 	size_t global_size = GLOBAL_SIZE;
 	size_t local_size = LOCAL_SIZE;
 	size_t num_groups = (global_size / local_size);
-	int i;
+	unsigned int i;
 
 	/* Create buffers. */
 	numbers = (int *) malloc(global_size * global_size * sizeof(int));
@@ -162,7 +162,7 @@ void run_matrix_multiply(cl_context context, cl_command_queue queue, cl_program 
 	float *c;
 	size_t global_size = GLOBAL_SIZE;
 	size_t local_size = LOCAL_SIZE;
-	int i, j;
+	cl_uint i, j;
 	unsigned int n;
 	
 	/* Create buffers. */
@@ -341,7 +341,7 @@ void run_hash_test(cl_context context, cl_command_queue queue, cl_program progra
 	size_t global_size = GLOBAL_SIZE;
 	size_t local_size = LOCAL_SIZE;
 	char *charset = "abcdefghijklmnopqrstuvwxyz";
-	int i, l;
+	cl_uint i, l;
 	
 	/* Create buffers. */
 	keys = (char *) malloc(global_size * len * sizeof(char));
@@ -411,12 +411,11 @@ void run_hash_test(cl_context context, cl_command_queue queue, cl_program progra
 
 void run_minp_test(cl_context context, cl_command_queue queue, cl_program program)
 {
-	cl_int err;
 	cl_kernel minp;
 	cl_kernel reduce;
 	cl_event ev;
 	unsigned int num_src_items = 4096*4096;
-	int i;
+	cl_uint i;
 	INT64 c0, c1, freq;
 	double elapsed;
 	int nloops = NLOOPS;
@@ -520,22 +519,25 @@ int main(int argc, char **argv)
 
 	int i, j;
 
+	//cl_platform_id p;
+	//cl_device_id d;
+	//p = get_platform("Intel");
+	//d = get_device(p, CL_DEVICE_TYPE_ALL, "Intel");
+
 	/* Iterate over the platforms and devices running the kernels.
 	 */
 	num_platforms = get_platforms(&platforms);
-	
-	if (num_platforms > 0)
-		print_platform_names(platforms, num_platforms);
+	print_platform_names(platforms, num_platforms);
 
 	for (i = 0; i < num_platforms; i++)
 	{
-		num_devices = get_devices(platforms[i], &devices);
-
-		if (num_devices > 0)
-			print_device_names(devices, num_devices);
-
+		num_devices = get_devices(platforms[i], CL_DEVICE_TYPE_ALL, &devices);
+		print_device_names(devices, num_devices);
+		
 		for (j = 0; j < num_devices; j++)
 		{
+			print_device_info(devices[j]);
+
 			/* Get context. */
 			context = clCreateContext(NULL, 1, &devices[j], NULL, NULL, &err); // TODO: should bother to specify platform in properties?
 			CL_CHECK_ERR(err);
@@ -550,10 +552,10 @@ int main(int argc, char **argv)
 			/* Run some kernels. */
 			//run_get_ids(context, queue, program);
 			//run_sum_numbers(context, queue, program);
-			run_matrix_multiply(context, queue, program);
+			//run_matrix_multiply(context, queue, program);
 			//run_hash_test(context, queue, program);
 			//run_minp_test();
-
+			
 			/* Clean up. */
 			err = clReleaseProgram(program); CL_CHECK_ERR(err);
 			err = clReleaseCommandQueue(queue); CL_CHECK_ERR(err);
@@ -561,8 +563,12 @@ int main(int argc, char **argv)
 		}
 	}
 
-	free(platforms);
-	free(devices);
+	/* Not the best strategy. */
+	if (num_platforms)
+		free(platforms);
+
+	if (num_devices)
+		free(devices);
 
 	return 0;
 }
